@@ -12,12 +12,14 @@ Rental Cash Damming is a strategy that involves:
 
 ## Features
 
+- Web-based interface for easy input and visualization
 - Calculates traditional mortgage payments and interest
 - Calculates HELOC + Mortgage payments and interest when using the strategy
 - Shows the difference in interest costs
 - Calculates tax savings from deductible HELOC interest
 - Provides net benefit analysis
 - Generates detailed monthly and yearly reports
+- Interactive charts and tables for better visualization
 
 ## Installation
 
@@ -29,50 +31,47 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Modify the parameters in the `main()` function of `rental_cash_damming_calculator.py` to match your situation:
-
-```python
-calculator = RentalCashDammingCalculator(
-    rental_income=2000,  # Monthly rental income
-    rental_mortgage=LoanParameters(
-        balance=300000,
-        interest_rate=4.5,
-        term_years=5,
-        amortization_years=25
-    ),
-    primary_mortgage=LoanParameters(
-        balance=500000,
-        interest_rate=3.5,
-        term_years=5,
-        amortization_years=25
-    ),
-    heloc=LoanParameters(
-        balance=0,
-        interest_rate=5.5,
-        term_years=999,  # HELOC doesn't have a term
-        amortization_years=999
-    ),
-    tax_rate=0.40,  # 40% tax rate
-    rental_expenses=500  # Monthly rental expenses excluding mortgage
-)
-```
-
-2. Run the calculator:
+1. Start the web application:
 ```bash
-python rental_cash_damming_calculator.py
+python app.py
 ```
+
+2. Open your web browser and navigate to `http://localhost:5000`
+
+3. Enter your financial parameters in the web interface:
+   - Rental Property Details:
+     - Monthly rental income
+     - Monthly rental expenses (excluding mortgage)
+     - Rental mortgage balance, interest rate, term, and amortization
+   - Primary Residence Details:
+     - Primary mortgage balance, interest rate, term, and amortization
+   - HELOC Details:
+     - HELOC balance and interest rate
+   - Other Parameters:
+     - Tax rate
+     - Simulation period (in years)
+
+4. Click "Calculate" to see the results
 
 ## Output
 
 The calculator provides:
-1. A 5-year summary showing total interest paid, tax savings, and net benefits
-2. Monthly details for the first year showing:
+1. A summary showing:
+   - Total interest paid in both scenarios
+   - Total tax savings
+   - Net benefit of the strategy
+   - Final balances for all loans
+2. Detailed monthly breakdown showing:
    - Traditional mortgage balance and interest
    - Strategy mortgage balance and interest
    - HELOC balance and interest
    - Tax savings
    - Net interest difference
    - Net benefit
+3. Interactive charts visualizing:
+   - Loan balances over time
+   - Interest payments comparison
+   - Cumulative benefits
 
 ## Important Notes
 
