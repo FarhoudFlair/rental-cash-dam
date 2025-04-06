@@ -469,73 +469,83 @@
         // Add initial rental property
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('rentalPropertiesContainer');
-            container.innerHTML = rentalPropertyTemplate;
-            
-            // Add event listener for the add property button
-            document.getElementById('addRentalProperty').addEventListener('click', function() {
-                const newProperty = document.createElement('div');
-                newProperty.innerHTML = rentalPropertyTemplate;
-                container.appendChild(newProperty.firstElementChild);
-                
-                // Add event listener to the new remove button
-                newProperty.querySelector('.remove-property').addEventListener('click', function() {
-                    this.closest('.rental-property').remove();
-                });
-            });
-            
-            // Add event listener to the initial remove button
-            document.querySelector('.remove-property').addEventListener('click', function() {
-                this.closest('.rental-property').remove();
-            });
-        });
+            const addBtn = document.getElementById('addRentalProperty');
 
-        // Update the form submission to handle multiple rental properties
-        document.getElementById('calculatorForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const rentalProperties = [];
-            document.querySelectorAll('.rental-property').forEach(property => {
-                rentalProperties.push({
-                    income: parseFloat(property.querySelector('.rental-income').value),
-                    expenses: parseFloat(property.querySelector('.rental-expenses').value),
-                    mortgage_balance: parseFloat(property.querySelector('.rental-mortgage-balance').value),
-                    mortgage_rate: parseFloat(property.querySelector('.rental-mortgage-rate').value),
-                    mortgage_term: parseInt(property.querySelector('.rental-mortgage-term').value),
-                    mortgage_amortization: parseInt(property.querySelector('.rental-mortgage-amortization').value)
-                });
-            });
-            
-            const data = {
-                rental_properties: rentalProperties,
-                primary_mortgage_balance: parseFloat(document.getElementById('primary_mortgage_balance').value),
-                primary_mortgage_rate: parseFloat(document.getElementById('primary_mortgage_rate').value),
-                primary_mortgage_term: parseInt(document.getElementById('primary_mortgage_term').value),
-                primary_mortgage_amortization: parseInt(document.getElementById('primary_mortgage_amortization').value),
-                heloc_balance: parseFloat(document.getElementById('heloc_balance').value),
-                heloc_rate: parseFloat(document.getElementById('heloc_rate').value),
-                tax_rate: parseFloat(document.getElementById('tax_rate').value),
-                simulation_years: parseInt(document.getElementById('simulation_years').value)
-            };
-            
-            try {
-                const response = await fetch('/calculate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const resultData = await response.json();
-                
-                if (resultData.success) {
-                    displayResults(resultData);
-                } else {
-                    alert('Error: ' + resultData.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
+            // Function to add a new property block (with unique IDs if needed, though not strictly necessary here)
+            function addPropertyBlock() {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = rentalPropertyTemplate.trim();
+                const newPropertyElement = tempDiv.firstElementChild;
+                container.appendChild(newPropertyElement);
             }
+
+            // Add the initial property
+            addPropertyBlock();
+
+            // Event listener for adding properties
+            addBtn.addEventListener('click', addPropertyBlock);
+
+            // Event delegation for removing properties - Attach listener to the container
+            container.addEventListener('click', function(event) {
+                // Check if the clicked element is a remove button or inside one
+                const removeButton = event.target.closest('.remove-property');
+                if (removeButton) {
+                    // Find the closest parent .rental-property div and remove it
+                    const propertyToRemove = removeButton.closest('.rental-property');
+                    if (propertyToRemove) {
+                        propertyToRemove.remove();
+                    }
+                }
+            });
+
+            // Update the form submission to handle multiple rental properties
+            document.getElementById('calculatorForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const rentalProperties = [];
+                document.querySelectorAll('.rental-property').forEach(property => {
+                    rentalProperties.push({
+                        income: parseFloat(property.querySelector('.rental-income').value),
+                        expenses: parseFloat(property.querySelector('.rental-expenses').value),
+                        mortgage_balance: parseFloat(property.querySelector('.rental-mortgage-balance').value),
+                        mortgage_rate: parseFloat(property.querySelector('.rental-mortgage-rate').value),
+                        mortgage_term: parseInt(property.querySelector('.rental-mortgage-term').value),
+                        mortgage_amortization: parseInt(property.querySelector('.rental-mortgage-amortization').value)
+                    });
+                });
+                
+                const data = {
+                    rental_properties: rentalProperties,
+                    primary_mortgage_balance: parseFloat(document.getElementById('primary_mortgage_balance').value),
+                    primary_mortgage_rate: parseFloat(document.getElementById('primary_mortgage_rate').value),
+                    primary_mortgage_term: parseInt(document.getElementById('primary_mortgage_term').value),
+                    primary_mortgage_amortization: parseInt(document.getElementById('primary_mortgage_amortization').value),
+                    heloc_balance: parseFloat(document.getElementById('heloc_balance').value),
+                    heloc_rate: parseFloat(document.getElementById('heloc_rate').value),
+                    tax_rate: parseFloat(document.getElementById('tax_rate').value),
+                    simulation_years: parseInt(document.getElementById('simulation_years').value)
+                };
+                
+                try {
+                    const response = await fetch('/calculate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    const resultData = await response.json();
+                    
+                    if (resultData.success) {
+                        displayResults(resultData);
+                    } else {
+                        alert('Error: ' + resultData.error);
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            });
         });
 
         function displayResults(data) {
