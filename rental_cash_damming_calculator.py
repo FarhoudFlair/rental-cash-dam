@@ -10,34 +10,45 @@ class LoanParameters:
     term_years: int
     amortization_years: int
 
+@dataclass
+class RentalProperty:
+    income: float
+    mortgage: LoanParameters
+    expenses: float
+
 class RentalCashDammingCalculator:
     def __init__(
         self,
-        rental_income: float,
-        rental_mortgage: LoanParameters,
+        rental_properties: List[RentalProperty],
         primary_mortgage: LoanParameters,
         heloc: LoanParameters,
         tax_rate: float,
-        rental_expenses: float,
     ):
-        self.rental_income = rental_income
-        self.rental_mortgage = rental_mortgage
+        self.rental_properties = rental_properties
         self.primary_mortgage = primary_mortgage
         self.heloc = heloc
         self.tax_rate = tax_rate
-        self.rental_expenses = rental_expenses
+        
+        # Calculate total rental income and expenses
+        self.total_rental_income = sum(prop.income for prop in rental_properties)
+        self.total_rental_expenses = sum(prop.expenses for prop in rental_properties)
         
         # Monthly interest rates
-        self.rental_mortgage_monthly_rate = rental_mortgage.interest_rate / 12 / 100
         self.primary_mortgage_monthly_rate = primary_mortgage.interest_rate / 12 / 100
         self.heloc_monthly_rate = heloc.interest_rate / 12 / 100
         
-        # Calculate initial monthly payments
-        self.rental_mortgage_payment = self._calculate_monthly_payment(
-            rental_mortgage.balance,
-            rental_mortgage.interest_rate,
-            rental_mortgage.amortization_years
-        )
+        # Calculate initial monthly payments for each rental mortgage using index as key
+        self.rental_mortgage_payments = {
+            i: self._calculate_monthly_payment(
+                prop.mortgage.balance,
+                prop.mortgage.interest_rate,
+                prop.mortgage.amortization_years
+            ) for i, prop in enumerate(rental_properties)
+        }
+        
+        # Calculate total rental mortgage payment
+        self.total_rental_mortgage_payment = sum(self.rental_mortgage_payments.values())
+        
         # Primary mortgage payment will be recalculated at term end
         self.initial_primary_payment = self._calculate_monthly_payment(
             primary_mortgage.balance,
@@ -110,7 +121,7 @@ class RentalCashDammingCalculator:
                 strat_primary_principal_component = max(0, current_strat_payment - strat_primary_interest)
                 
                 # Total funds available for primary mortgage paydown this month
-                total_funds_for_primary_paydown = strat_primary_principal_component + self.rental_income
+                total_funds_for_primary_paydown = strat_primary_principal_component + self.total_rental_income
                 
                 # Amount actually applied to primary mortgage (cannot exceed remaining balance)
                 actual_primary_paydown = min(total_funds_for_primary_paydown, strat_primary_balance)
@@ -123,7 +134,7 @@ class RentalCashDammingCalculator:
                 excess_funds_for_heloc_paydown = total_funds_for_primary_paydown - actual_primary_paydown
                 
                 # 1. Calculate total rental expenses to be paid by HELOC
-                total_rental_outflows = self.rental_expenses + self.rental_mortgage_payment
+                total_rental_outflows = self.total_rental_expenses + self.total_rental_mortgage_payment
                 
                 # 2. Increase HELOC balance by rental outflows
                 heloc_balance += total_rental_outflows
@@ -149,14 +160,14 @@ class RentalCashDammingCalculator:
 
                 # --- Continue Rental Cash Damming on HELOC ---
                 # 1. Calculate total rental expenses to be paid by HELOC
-                total_rental_outflows = self.rental_expenses + self.rental_mortgage_payment
+                total_rental_outflows = self.total_rental_expenses + self.total_rental_mortgage_payment
 
                 # 2. Increase HELOC balance by rental outflows (borrowing for expenses)
                 heloc_balance += total_rental_outflows
 
                 # 3. Determine funds available for HELOC paydown
                 #    Using rental income + the freed-up initial primary payment amount.
-                available_for_heloc_paydown = self.rental_income + self.initial_primary_payment
+                available_for_heloc_paydown = self.total_rental_income + self.initial_primary_payment
 
                 # 4. Apply paydown to HELOC
                 actual_heloc_payment = min(available_for_heloc_paydown, heloc_balance) # Cannot pay more than balance

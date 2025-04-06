@@ -204,52 +204,16 @@
         
         <form id="calculatorForm" class="mb-4">
             <div class="row">
-                <!-- Rental Property Section -->
+                <!-- Rental Properties Section -->
                 <div class="col-md-6">
                     <div class="form-section">
-                        <h3><i class="fas fa-home section-icon"></i>Rental Property</h3>
-                        <div class="mb-3">
-                            <label for="rental_income" class="form-label">Monthly Rental Income</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="rental_income" value="2900" required>
-                            </div>
+                        <h3><i class="fas fa-home section-icon"></i>Rental Properties</h3>
+                        <div id="rentalPropertiesContainer">
+                            <!-- Rental property template will be cloned here -->
                         </div>
-                        <div class="mb-3">
-                            <label for="rental_expenses" class="form-label">Monthly Rental Expenses</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="rental_expenses" value="400" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="rental_mortgage_balance" class="form-label">Rental Mortgage Balance</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="rental_mortgage_balance" value="400000" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="rental_mortgage_rate" class="form-label">Rental Mortgage Rate</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="rental_mortgage_rate" step="0.01" value="4" required>
-                                <span class="input-group-text">%</span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="rental_mortgage_term" class="form-label">Rental Mortgage Term</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="rental_mortgage_term" value="5" required>
-                                <span class="input-group-text">Years</span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="rental_mortgage_amortization" class="form-label">Rental Mortgage Amortization</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="rental_mortgage_amortization" value="25" required>
-                                <span class="input-group-text">Years</span>
-                            </div>
-                        </div>
+                        <button type="button" class="btn btn-success mt-3" id="addRentalProperty">
+                            <i class="fas fa-plus"></i> Add Another Rental Property
+                        </button>
                     </div>
                 </div>
 
@@ -448,44 +412,129 @@
         let balanceChart = null;
         let interestChart = null;
 
-        document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
+        // Template for rental property form
+        const rentalPropertyTemplate = `
+            <div class="rental-property mb-4 p-3 border rounded">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Rental Property</h4>
+                    <button type="button" class="btn btn-danger btn-sm remove-property">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Monthly Rental Income</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control rental-income" value="2900" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Monthly Rental Expenses</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control rental-expenses" value="400" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Rental Mortgage Balance</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control rental-mortgage-balance" value="400000" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Rental Mortgage Rate</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control rental-mortgage-rate" step="0.01" value="4" required>
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Rental Mortgage Term</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control rental-mortgage-term" value="5" required>
+                        <span class="input-group-text">Years</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Rental Mortgage Amortization</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control rental-mortgage-amortization" value="25" required>
+                        <span class="input-group-text">Years</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add initial rental property
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('rentalPropertiesContainer');
+            container.innerHTML = rentalPropertyTemplate;
+            
+            // Add event listener for the add property button
+            document.getElementById('addRentalProperty').addEventListener('click', function() {
+                const newProperty = document.createElement('div');
+                newProperty.innerHTML = rentalPropertyTemplate;
+                container.appendChild(newProperty.firstElementChild);
+                
+                // Add event listener to the new remove button
+                newProperty.querySelector('.remove-property').addEventListener('click', function() {
+                    this.closest('.rental-property').remove();
+                });
+            });
+            
+            // Add event listener to the initial remove button
+            document.querySelector('.remove-property').addEventListener('click', function() {
+                this.closest('.rental-property').remove();
+            });
+        });
+
+        // Update the form submission to handle multiple rental properties
+        document.getElementById('calculatorForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const formData = {
-                rental_income: document.getElementById('rental_income').value,
-                rental_expenses: document.getElementById('rental_expenses').value,
-                rental_mortgage_balance: document.getElementById('rental_mortgage_balance').value,
-                rental_mortgage_rate: document.getElementById('rental_mortgage_rate').value,
-                rental_mortgage_term: document.getElementById('rental_mortgage_term').value,
-                rental_mortgage_amortization: document.getElementById('rental_mortgage_amortization').value,
-                primary_mortgage_balance: document.getElementById('primary_mortgage_balance').value,
-                primary_mortgage_rate: document.getElementById('primary_mortgage_rate').value,
-                primary_mortgage_term: document.getElementById('primary_mortgage_term').value,
-                primary_mortgage_amortization: document.getElementById('primary_mortgage_amortization').value,
-                heloc_balance: document.getElementById('heloc_balance').value,
-                heloc_rate: document.getElementById('heloc_rate').value,
-                tax_rate: document.getElementById('tax_rate').value / 100, // Convert tax rate % to decimal
-                simulation_years: document.getElementById('simulation_years').value // Add simulation years
+            const rentalProperties = [];
+            document.querySelectorAll('.rental-property').forEach(property => {
+                rentalProperties.push({
+                    income: parseFloat(property.querySelector('.rental-income').value),
+                    expenses: parseFloat(property.querySelector('.rental-expenses').value),
+                    mortgage_balance: parseFloat(property.querySelector('.rental-mortgage-balance').value),
+                    mortgage_rate: parseFloat(property.querySelector('.rental-mortgage-rate').value),
+                    mortgage_term: parseInt(property.querySelector('.rental-mortgage-term').value),
+                    mortgage_amortization: parseInt(property.querySelector('.rental-mortgage-amortization').value)
+                });
+            });
+            
+            const data = {
+                rental_properties: rentalProperties,
+                primary_mortgage_balance: parseFloat(document.getElementById('primary_mortgage_balance').value),
+                primary_mortgage_rate: parseFloat(document.getElementById('primary_mortgage_rate').value),
+                primary_mortgage_term: parseInt(document.getElementById('primary_mortgage_term').value),
+                primary_mortgage_amortization: parseInt(document.getElementById('primary_mortgage_amortization').value),
+                heloc_balance: parseFloat(document.getElementById('heloc_balance').value),
+                heloc_rate: parseFloat(document.getElementById('heloc_rate').value),
+                tax_rate: parseFloat(document.getElementById('tax_rate').value),
+                simulation_years: parseInt(document.getElementById('simulation_years').value)
             };
-
+            
             try {
                 const response = await fetch('/calculate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(data)
                 });
-
-                const data = await response.json();
                 
-                if (data.success) {
-                    displayResults(data);
+                const resultData = await response.json();
+                
+                if (resultData.success) {
+                    displayResults(resultData);
                 } else {
-                    alert('Error: ' + data.error);
+                    alert('Error: ' + resultData.error);
                 }
             } catch (error) {
-                alert('Error calculating results: ' + error);
+                alert('Error: ' + error.message);
             }
         });
 

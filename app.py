@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from rental_cash_damming_calculator import RentalCashDammingCalculator, LoanParameters
+from rental_cash_damming_calculator import RentalCashDammingCalculator, LoanParameters, RentalProperty
 
 app = Flask(__name__)
 
@@ -12,13 +12,23 @@ def calculate():
     try:
         data = request.get_json()
         
-        # Extract rental mortgage parameters
-        rental_mortgage = LoanParameters(
-            balance=float(data['rental_mortgage_balance']),
-            interest_rate=float(data['rental_mortgage_rate']),
-            term_years=int(data['rental_mortgage_term']),
-            amortization_years=int(data['rental_mortgage_amortization'])
-        )
+        # Extract rental properties
+        rental_properties = []
+        for i in range(len(data['rental_properties'])):
+            prop_data = data['rental_properties'][i]
+            rental_mortgage = LoanParameters(
+                balance=float(prop_data['mortgage_balance']),
+                interest_rate=float(prop_data['mortgage_rate']),
+                term_years=int(prop_data['mortgage_term']),
+                amortization_years=int(prop_data['mortgage_amortization'])
+            )
+            
+            rental_property = RentalProperty(
+                income=float(prop_data['income']),
+                mortgage=rental_mortgage,
+                expenses=float(prop_data['expenses'])
+            )
+            rental_properties.append(rental_property)
         
         # Extract primary mortgage parameters
         primary_mortgage = LoanParameters(
@@ -38,12 +48,10 @@ def calculate():
         
         # Create calculator instance
         calculator = RentalCashDammingCalculator(
-            rental_income=float(data['rental_income']),
-            rental_mortgage=rental_mortgage,
+            rental_properties=rental_properties,
             primary_mortgage=primary_mortgage,
             heloc=heloc,
-            tax_rate=float(data['tax_rate']),
-            rental_expenses=float(data['rental_expenses'])
+            tax_rate=float(data['tax_rate']) / 100
         )
         
         # Calculate schedules based on simulation years
